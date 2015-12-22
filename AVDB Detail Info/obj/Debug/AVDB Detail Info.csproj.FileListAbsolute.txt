@@ -1,0 +1,5 @@
+c:\users\joey\documents\visual studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\AVDB Detail Info.exe.config
+c:\users\joey\documents\visual studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\AVDB Detail Info.exe
+c:\users\joey\documents\visual studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\AVDB Detail Info.pdb
+c:\users\joey\documents\visual studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\obj\Debug\AVDB Detail Info.exe
+c:\users\joey\documents\visual studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\obj\Debug\AVDB Detail Info.pdb
