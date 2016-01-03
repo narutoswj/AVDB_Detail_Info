@@ -144,19 +144,25 @@ namespace AVDB_Detail_Info
                             }
                         }
 
-                        foreach (var ac in actresslist)
+                        if (actresslist != null)
                         {
-                            actress = ac.InnerText;
-                            insertSQL = insertSQL + "INSERT INTO [VideoActress] SELECT '" + fanhao + "','','" + actress + "';";
-                            Console.WriteLine(actress);
+                            foreach (var ac in actresslist)
+                            {
+                                actress = ac.InnerText;
+                                insertSQL = insertSQL + "INSERT INTO [VideoActress] SELECT '" + fanhao + "','','" + actress + "';";
+                                Console.WriteLine(actress);
+                            }
                         }
 
-                        foreach (var s in snapshotlist)
+                        if (snapshotlist != null)
                         {
-                            snapshotname = s.GetAttributeValue("alt", "No");
-                            snapshotimage = s.GetAttributeValue("data-original", "No");
-                            insertSQL = insertSQL + "INSERT INTO [VideoSnapshot] SELECT '" + fanhao + "','" + snapshotimage + "','" + snapshotname + "';";
-                            Console.WriteLine(snapshotimage);
+                            foreach (var s in snapshotlist)
+                            {
+                                snapshotname = s.GetAttributeValue("alt", "No");
+                                snapshotimage = s.GetAttributeValue("data-original", "No");
+                                insertSQL = insertSQL + "INSERT INTO [VideoSnapshot] SELECT '" + fanhao + "','" + snapshotimage + "','" + snapshotname + "';";
+                                Console.WriteLine(snapshotimage);
+                            }
                         }
 
                         string coverImage = htmlNode.SelectSingleNode("/html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/a[1]").GetAttributeValue("href", "No");
