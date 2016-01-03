@@ -1,7 +1,9 @@
-﻿using System;
+﻿using HtmlAgilityPack;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Data.SQLite;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -13,377 +15,160 @@ namespace AVDB_Detail_Info
 {
     class Program
     {
-        static Regex RegexbigImage = new Regex(@"a class=""bigImage"" href=""(.*?)""");
-        static Regex Regexfanhao = new Regex(@"<p><span class=""header"">番號:</span> (.*?)</span></p>", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Multiline | RegexOptions.Singleline);
-        static Regex Regexgroup = new Regex(@"/group/(.*?)""");
-        static Regex RegexreleaseDate = new Regex(@"發行時間:</strong> (.*?)<");
-        static Regex Regexlength = new Regex(@"影片長度:</strong> (.*?)<");
-
-        static Regex Regexdirector = new Regex(@"/director/(.*?)"">(.*?)<");
-        static Regex Regexstudio = new Regex(@"/studio/(.*?)"">(.*?)<");
-        static Regex Regexlabel = new Regex(@"/label/(.*?)"">(.*?)<");
-        static Regex Regexseries = new Regex(@"/series/(.*?)"">(.*?)<");
-        static Regex Regexgenre = new Regex(@"/genre/(.*?)"">(.*?)<");
-        static Regex Regexactress = new Regex(@"aria-expanded=""true"">(.*?)<");
-        static Regex RegexSnapshot = new Regex(@"layer-img=""(.*?)"" alt=""(.*?)""");
-
-        static string connectString = "Data Source=.;Initial Catalog=Media;Integrated Security=True";
+        static string connectStringSQLite = "Data Source  =D:\\Media.db";
 
         static void Main(string[] args)
         {
-            try { 
-            DataSet ds = GetUrlList();
-            string test = ds.Tables[0].Rows[0].ItemArray[0].ToString();
-            foreach (DataRow r in ds.Tables[0].Rows)
+            CreateTable(connectStringSQLite);
+
+            while (GetUrlList(connectStringSQLite).Count >= 1)
             {
-                string url = r.ItemArray[0].ToString();
-                string html = GetUrltoHtml(url, "utf-8");
-                string fanhao = Regexfanhao.Matches(html)[0].Groups[1].Value.ToString();
-                string group = Regexgroup.Matches(html)[0].Groups[1].Value.ToString();
-
-                Console.WriteLine("---------------------------------------------------");
-                Console.WriteLine(group + " - " + fanhao);
-                Console.WriteLine();
-
-                string path = AppDomain.CurrentDomain.SetupInformation.ApplicationBase + "\\" + group;
-                if (!Directory.Exists(path))
+                foreach (string url in GetUrlList(connectStringSQLite))
                 {
-                    Directory.CreateDirectory(path);
+                    string pageHtml = GetUrltoHtml(url, "utf-8");
+                    var htmlDocument = new HtmlDocument();
+                    htmlDocument.LoadHtml(pageHtml);
+
+                    var htmlNode = htmlDocument.DocumentNode;
+
+                    string fanhao = "";
+                    string length = "";
+                    string releasedate = "";
+                    string director = "";
+                    string directorhyperlink = "";
+                    string studio = "";
+                    string studiohyperlink = "";
+                    string series = "";
+                    string serieshyperlink = "";
+                    string label = "";
+                    string labelhyperlink = "";
+                    string genre = "";
+                    string genrehyperlink = "";
+                    string actress = "";
+                    string snapshotname = "";
+                    string snapshotimage = "";
+                    string insertSQL = "";
+
+                    try
+                    {
+                        var allinfo = htmlNode.SelectSingleNode("/html[1]/body[1]/div[1]/div[1]/div[1]/div[2]");
+                        var infolist = allinfo.SelectNodes("//p");
+                        var actresslist = htmlNode.SelectNodes("/html[1]/body[1]/div[1]/div[1]/div[4]/div[1]/nav[1]/ul[1]//li");
+                        var snapshotlist = htmlNode.SelectNodes("/html[1]/body[1]/div[1]/div[1]/div[5]/div[1]/img");
+
+                        foreach (var info in infolist)
+                        {
+                            var attrspan = info.SelectSingleNode("./span");
+                            if (attrspan != null)
+                            {
+                                if (attrspan.InnerHtml.Contains("番號"))
+                                {
+                                    fanhao = info.LastChild.InnerText.Trim();
+                                    Console.WriteLine(fanhao);
+                                }
+                            }
+
+                            var attrstrong = info.SelectSingleNode("./strong");
+                            if (attrstrong != null)
+                            {
+                                if (attrstrong.InnerHtml.Contains("長度"))
+                                {
+                                    length = info.LastChild.InnerText.Trim();
+                                    Console.WriteLine(length);
+                                }
+                                else if (attrstrong.InnerHtml.Contains("發行時間"))
+                                {
+                                    releasedate = info.LastChild.InnerText.Trim();
+                                    Console.WriteLine(releasedate);
+                                }
+                                else if (attrstrong.InnerHtml.Contains("導演"))
+                                {
+                                    var directors = info.SelectNodes("./a");
+                                    foreach (var d in directors)
+                                    {
+                                        director = d.InnerText;
+                                        directorhyperlink = d.GetAttributeValue("href", "No").Split('/')[4];
+                                        insertSQL = insertSQL + "INSERT INTO [VideoDirector] SELECT '" + fanhao + "','" + directorhyperlink + "','" + director + "';";
+                                        Console.WriteLine(director);
+                                        Console.WriteLine(directorhyperlink);
+                                    }
+                                }
+                                else if (attrstrong.InnerHtml.Contains("制作商"))
+                                {
+                                    var studios = info.SelectNodes("./a");
+                                    foreach (var s in studios)
+                                    {
+                                        studio = s.InnerText;
+                                        studiohyperlink = s.GetAttributeValue("href", "No").Split('/')[4];
+                                        insertSQL = insertSQL + "INSERT INTO [VideoStudio] SELECT '" + fanhao + "','" + studiohyperlink + "','" + studio + "';";
+                                        Console.WriteLine(studio);
+                                        Console.WriteLine(studiohyperlink);
+                                    }
+                                }
+                                else if (attrstrong.InnerHtml.Contains("發行商"))
+                                {
+                                    var labels = info.SelectNodes("./a");
+                                    foreach (var l in labels)
+                                    {
+                                        label = l.InnerText;
+                                        labelhyperlink = l.GetAttributeValue("href", "No").Split('/')[4];
+                                        insertSQL = insertSQL + "INSERT INTO [VideoLabel] SELECT '" + fanhao + "','" + labelhyperlink + "','" + label + "';";
+                                        Console.WriteLine(label);
+                                        Console.WriteLine(labelhyperlink);
+                                    }
+                                }
+                                else if (attrstrong.InnerHtml.Contains("系列"))
+                                {
+                                    var serieses = info.SelectNodes("./a");
+                                    foreach (var s in serieses)
+                                    {
+                                        series = s.InnerText;
+                                        serieshyperlink = s.GetAttributeValue("href", "No").Split('/')[4];
+                                        insertSQL = insertSQL + "INSERT INTO [VideoSeries] SELECT '" + fanhao + "','" + serieshyperlink + "','" + series + "';";
+                                        Console.WriteLine(series);
+                                        Console.WriteLine(serieshyperlink);
+                                    }
+                                }
+                                else if (attrstrong.InnerHtml.Contains("類別"))
+                                {
+                                    var genres = info.SelectNodes("./a");
+                                    foreach (var g in genres)
+                                    {
+                                        genre = g.InnerText;
+                                        genrehyperlink = g.GetAttributeValue("href", "No").Split('/')[4];
+                                        insertSQL = insertSQL + "INSERT INTO [VideoGenre] SELECT '" + fanhao + "','" + genrehyperlink + "','" + genre + "';";
+                                        Console.WriteLine(genre);
+                                        Console.WriteLine(genrehyperlink);
+                                    }
+                                }
+                            }
+                        }
+
+                        foreach (var ac in actresslist)
+                        {
+                            actress = ac.InnerText;
+                            insertSQL = insertSQL + "INSERT INTO [VideoActress] SELECT '" + fanhao + "','','" + actress + "';";
+                            Console.WriteLine(actress);
+                        }
+
+                        foreach (var s in snapshotlist)
+                        {
+                            snapshotname = s.GetAttributeValue("alt", "No");
+                            snapshotimage = s.GetAttributeValue("data-original", "No");
+                            insertSQL = insertSQL + "INSERT INTO [VideoSnapshot] SELECT '" + fanhao + "','" + snapshotimage + "','" + snapshotname + "';";
+                            Console.WriteLine(snapshotimage);
+                        }
+
+                        string coverImage = htmlNode.SelectSingleNode("/html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/a[1]").GetAttributeValue("href", "No");
+                        Console.WriteLine(coverImage);
+                        insertSQL = insertSQL + "INSERT INTO [VideoDetail] SELECT '" + fanhao + "','" + releasedate + "','" + fanhao + "','" + length + "','" + coverImage + "';";
+                        ExectueInsertQuery(connectStringSQLite,insertSQL);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
                 }
-
-                //if (!File.Exists(path + "\\" + fanhao + ".jpeg"))
-                //{
-                //    WebClient webClient = new WebClient();
-                //    webClient.DownloadFile(RegexbigImage.Matches(html)[0].Groups[1].ToString(), path + "\\" + fanhao + ".jpeg");
-                //    webClient.Dispose();
-                //}
-
-                GetDetailBasic(url, fanhao, html);
-                GetDirector(url, fanhao, html);
-                GetStudio(url, fanhao, html);
-                GetLabel(url, fanhao, html);
-                GetSeries(url, fanhao, html);
-                GetGenre(url, fanhao, html);
-                GetActress(url, fanhao, html);
-                GetSnapshot(url, fanhao, html);
-                Console.WriteLine();
-                Console.WriteLine();
-                Console.WriteLine("---------------------------------------------------");
-            }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-        }
-
-        private static void GetActress(string url, string fanhao, string html)
-        {
-            MatchCollection ActressMatchCollection = Regexactress.Matches(html);
-
-            foreach (Match match in ActressMatchCollection)
-            {
-                SqlConnection sqlCnt = new SqlConnection(connectString);
-                sqlCnt.Open();
-                SqlCommand cmd = sqlCnt.CreateCommand();
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandText = "INSERT INTO [dbo].[VideoActress] ([SerialNumber],[ActressCode],[Actress]) VALUES (@SerialNumber,@ActressCode,@Actress)";
-                cmd.Parameters.Add("@SerialNumber", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@ActressCode", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@Actress", SqlDbType.NVarChar);
-
-                cmd.Parameters["@SerialNumber"].Value = fanhao;
-                cmd.Parameters["@ActressCode"].Value = match.Groups[1].Value.ToString();
-                cmd.Parameters["@Actress"].Value = match.Groups[2].Value.ToString();
-
-                Console.WriteLine(DateTime.Now + " Actress: " + match.Groups[1].Value.ToString());
-
-                try
-                {
-                    cmd.ExecuteScalar();
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                catch (System.Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                //string test = match.Groups[1].Value.ToString();
-            }
-        }
-
-        private static void GetGenre(string url, string fanhao, string html)
-        {
-            MatchCollection GenreMatchCollection = Regexgenre.Matches(html);
-
-            foreach (Match match in GenreMatchCollection)
-            {
-                SqlConnection sqlCnt = new SqlConnection(connectString);
-                sqlCnt.Open();
-                SqlCommand cmd = sqlCnt.CreateCommand();
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandText = "INSERT INTO [dbo].[VideoGenre] ([SerialNumber],[GenreCode],[Genre]) VALUES (@SerialNumber,@GenreCode,@Genre)";
-                cmd.Parameters.Add("@SerialNumber", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@GenreCode", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@Genre", SqlDbType.NVarChar);
-
-                cmd.Parameters["@SerialNumber"].Value = fanhao;
-                cmd.Parameters["@GenreCode"].Value = match.Groups[1].Value.ToString();
-                cmd.Parameters["@Genre"].Value = match.Groups[2].Value.ToString();
-
-                Console.WriteLine(DateTime.Now + " Genre: " + match.Groups[2].Value.ToString());
-                try
-                {
-                    cmd.ExecuteScalar();
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                catch (System.Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                //string test = match.Groups[1].Value.ToString();
-            }
-        }
-
-        private static void GetSeries(string url, string fanhao, string html)
-        {
-            MatchCollection seriesMatchCollection = Regexseries.Matches(html);
-
-            foreach (Match match in seriesMatchCollection)
-            {
-                SqlConnection sqlCnt = new SqlConnection(connectString);
-                sqlCnt.Open();
-                SqlCommand cmd = sqlCnt.CreateCommand();
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandText = "INSERT INTO [dbo].[VideoSeries] ([SerialNumber],[SeriesCode],[Series]) VALUES (@SerialNumber,@SeriesCode,@Series)";
-                cmd.Parameters.Add("@SerialNumber", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@SeriesCode", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@Series", SqlDbType.NVarChar);
-
-                cmd.Parameters["@SerialNumber"].Value = fanhao;
-                cmd.Parameters["@SeriesCode"].Value = match.Groups[1].Value.ToString();
-                cmd.Parameters["@Series"].Value = match.Groups[2].Value.ToString();
-
-                Console.WriteLine(DateTime.Now + " Series: " + match.Groups[2].Value.ToString());
-
-                try
-                {
-                    cmd.ExecuteScalar();
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                catch (System.Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                //string test = match.Groups[1].Value.ToString();
-            }
-        }
-
-        private static void GetLabel(string url, string fanhao, string html)
-        {
-            MatchCollection labelMatchCollection = Regexlabel.Matches(html);
-
-            foreach (Match match in labelMatchCollection)
-            {
-                SqlConnection sqlCnt = new SqlConnection(connectString);
-                sqlCnt.Open();
-                SqlCommand cmd = sqlCnt.CreateCommand();
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandText = "INSERT INTO [dbo].[VideoLabel] ([SerialNumber],[LabelCode],[Label]) VALUES (@SerialNumber,@LabelCode,@Label)";
-                cmd.Parameters.Add("@SerialNumber", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@LabelCode", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@Label", SqlDbType.NVarChar);
-
-                cmd.Parameters["@SerialNumber"].Value = fanhao;
-                cmd.Parameters["@LabelCode"].Value = match.Groups[1].Value.ToString();
-                cmd.Parameters["@Label"].Value = match.Groups[2].Value.ToString();
-
-                Console.WriteLine(DateTime.Now + " Label: " + match.Groups[2].Value.ToString());
-
-                try
-                {
-                    cmd.ExecuteScalar();
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                catch (System.Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                //string test = match.Groups[1].Value.ToString();
-            }
-        }
-
-        private static void GetStudio(string url, string fanhao, string html)
-        {
-            MatchCollection studioMatchCollection = Regexstudio.Matches(html);
-
-            foreach (Match match in studioMatchCollection)
-            {
-                SqlConnection sqlCnt = new SqlConnection(connectString);
-                sqlCnt.Open();
-                SqlCommand cmd = sqlCnt.CreateCommand();
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandText = "INSERT INTO [dbo].[VideoStudio] ([SerialNumber],[StudioCode],[Studio]) VALUES (@SerialNumber,@StudioCode,@Studio)";
-                cmd.Parameters.Add("@SerialNumber", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@StudioCode", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@Studio", SqlDbType.NVarChar);
-
-                cmd.Parameters["@SerialNumber"].Value = fanhao;
-                cmd.Parameters["@StudioCode"].Value = match.Groups[1].Value.ToString();
-                cmd.Parameters["@Studio"].Value = match.Groups[2].Value.ToString();
-
-                Console.WriteLine(DateTime.Now + " Studio: " + match.Groups[2].Value.ToString());
-
-                try
-                {
-                    cmd.ExecuteScalar();
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                catch (System.Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                //string test = match.Groups[1].Value.ToString();
-            }
-        }
-
-        private static void GetDirector(string url, string fanhao, string html)
-        {
-            MatchCollection directorMatchCollection = Regexdirector.Matches(html);
-
-            foreach (Match match in directorMatchCollection)
-            {
-                SqlConnection sqlCnt = new SqlConnection(connectString);
-                sqlCnt.Open();
-                SqlCommand cmd = sqlCnt.CreateCommand();
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandText = "INSERT INTO [dbo].[VideoDirector] ([SerialNumber],[DirectorCode],[Director]) VALUES (@SerialNumber,@DirectorCode,@Director)";
-                cmd.Parameters.Add("@SerialNumber", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@DirectorCode", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@Director", SqlDbType.NVarChar);
-
-                cmd.Parameters["@SerialNumber"].Value = fanhao;
-                cmd.Parameters["@DirectorCode"].Value = match.Groups[1].Value.ToString();
-                cmd.Parameters["@Director"].Value = match.Groups[2].Value.ToString();
-
-                Console.WriteLine(DateTime.Now + " Director: " + match.Groups[2].Value.ToString());
-
-                try
-                {
-                    cmd.ExecuteScalar();
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                catch (System.Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                //string test = match.Groups[1].Value.ToString();
-            }
-        }
-
-        private static void GetSnapshot(string url, string fanhao, string html)
-        {
-            MatchCollection directorMatchCollection = RegexSnapshot.Matches(html);
-
-            foreach (Match match in directorMatchCollection)
-            {
-                SqlConnection sqlCnt = new SqlConnection(connectString);
-                sqlCnt.Open();
-                SqlCommand cmd = sqlCnt.CreateCommand();
-                cmd.CommandType = CommandType.Text;
-                cmd.CommandText = "INSERT INTO [dbo].[VideoSnapshot] ([SerialNumber],[URL],[PicName]) VALUES (@SerialNumber,@URL,@PicName)";
-                cmd.Parameters.Add("@SerialNumber", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@URL", SqlDbType.NVarChar);
-                cmd.Parameters.Add("@PicName", SqlDbType.NVarChar);
-
-                cmd.Parameters["@SerialNumber"].Value = fanhao;
-                cmd.Parameters["@URL"].Value = match.Groups[1].Value.ToString();
-                cmd.Parameters["@PicName"].Value = match.Groups[2].Value.ToString();
-
-                Console.WriteLine(DateTime.Now + " Snapshot: " + match.Groups[2].Value.ToString());
-
-                try
-                {
-                    cmd.ExecuteScalar();
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                catch (System.Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    sqlCnt.Close();
-                    sqlCnt.Dispose();
-                }
-                //string test = match.Groups[1].Value.ToString();
-            }
-        }
-
-        private static void GetDetailBasic(string url, string fanhao, string html)
-        {
-            SqlConnection sqlCnt = new SqlConnection(connectString);
-            string bigImage = RegexbigImage.Matches(html)[0].Groups[1].Value;
-            string releaseDate, length;
-            try
-            {
-                releaseDate = RegexreleaseDate.Matches(html)[0].Groups[1].Value;
-            }
-            catch (System.Exception e)
-            {
-                Console.WriteLine(e.Message);
-                releaseDate = "";
-            }
-            try
-            {
-                length = Regexlength.Matches(html)[0].Groups[1].Value;
-            }
-            catch (System.Exception e)
-            {
-                Console.WriteLine(e.Message);
-                length = "";
-            }
-            sqlCnt.Open();
-            SqlCommand cmd = sqlCnt.CreateCommand();
-            cmd.CommandType = CommandType.Text;
-            cmd.CommandText = "INSERT INTO [dbo].[VideoDetail] ([SerialNumber],[ReleaseDate],[Fanhao],[Length],[BigPicUrl]) VALUES (@SerialNumber,@ReleaseDate,@Fanhao,@Length,@BigPicUrl)";
-            cmd.Parameters.Add("@SerialNumber", SqlDbType.NVarChar);
-            cmd.Parameters.Add("@ReleaseDate", SqlDbType.NVarChar);
-            cmd.Parameters.Add("@Fanhao", SqlDbType.NVarChar);
-            cmd.Parameters.Add("@Length", SqlDbType.NVarChar);
-            cmd.Parameters.Add("@BigPicUrl", SqlDbType.NVarChar);
-            cmd.Parameters["@SerialNumber"].Value = Regexfanhao.Matches(html)[0].Groups[1].Value.ToString();
-            cmd.Parameters["@ReleaseDate"].Value = releaseDate;
-            cmd.Parameters["@Fanhao"].Value = fanhao;
-            cmd.Parameters["@Length"].Value = length;
-            cmd.Parameters["@BigPicUrl"].Value = RegexbigImage.Matches(html)[0].Groups[1].Value.ToString();
-
-            try
-            {
-                cmd.ExecuteScalar();
-                sqlCnt.Close();
-                sqlCnt.Dispose();
-            }
-            catch (System.Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                sqlCnt.Close();
-                sqlCnt.Dispose();
             }
         }
 
@@ -408,19 +193,83 @@ namespace AVDB_Detail_Info
 
         }
 
-        public static DataSet GetUrlList()
-        {
-            SqlConnection sqlCnt = new SqlConnection(connectString);
-            SqlCommand cmd = sqlCnt.CreateCommand();
-            cmd.CommandTimeout = 60;
-            cmd.CommandType = CommandType.Text;
-            cmd.CommandText = "SELECT A.[SerialHyperLink]  FROM [Media].[dbo].[VideoSummary] A  LEFT JOIN [Media].[dbo].[VideoDetail] B  ON A.SerialNumber =B.Fanhao  where B.SerialNumber is null";
-            DataSet ds = new DataSet();
-            sqlCnt.Open();
-            SqlDataAdapter command = new SqlDataAdapter(cmd.CommandText, connectString);
-            command.Fill(ds, "ds");
 
-            return ds;
+
+        private static List<string> GetUrlList(string connectStringSQLite)
+        {
+            List<string> pagelist = new List<string>();
+            SQLiteConnection conn = null;
+            conn = new SQLiteConnection(connectStringSQLite);
+            conn.Open();
+            string sql = @"SELECT A.[SerialHyperLink]  FROM [VideoSummary] A  LEFT JOIN [VideoDetail] B  ON A.SerialNumber =B.Fanhao  WHERE B.SerialNumber IS NULL ORDER BY A.[SerialHyperLink] DESC LIMIT 0,100";
+            //string sql = @"SELECT A.[SerialHyperLink]  FROM [VideoSummary] A  LEFT JOIN [VideoDetail] B  ON A.SerialNumber =B.Fanhao  WHERE A.[SerialHyperLink] = 'https://avdb.lol/fanhao/ZZZD-004.html'";
+            SQLiteCommand cmdFailedPage = new SQLiteCommand(sql, conn);
+            SQLiteDataReader reader = cmdFailedPage.ExecuteReader();
+            while (reader.Read())
+            {
+                pagelist.Add(reader.GetString(0));
+
+            }
+            conn.Close();
+
+            return pagelist;
+        }
+
+        private static void CreateTable(string connectStringSQLite)
+        {
+            SQLiteConnection conn = null;
+            conn = new SQLiteConnection(connectStringSQLite);
+            conn.Open();
+            string sql = @"CREATE TABLE IF NOT EXISTS [VideoActress](
+                            [SerialNumber] [nvarchar](50) NULL,
+                            [ActressCode] [nvarchar](50) NULL,
+                            [Actress] [nvarchar](50) NULL);
+                            CREATE TABLE IF NOT EXISTS [VideoDetail](
+                            [SerialNumber] [nvarchar](500) NULL,
+                            [ReleaseDate] [nvarchar](500) NULL,
+                            [Fanhao] [nvarchar](500) NULL,
+                            [Length] [nvarchar](500) NULL,
+                            [BigPicUrl] [nvarchar](500) NULL);
+                            CREATE TABLE IF NOT EXISTS [VideoDirector](
+                            [SerialNumber] [nvarchar](50) NULL,
+                            [DirectorCode] [nvarchar](50) NULL,
+                            [Director] [nvarchar](50) NULL);
+                            CREATE TABLE IF NOT EXISTS [VideoGenre](
+                            [SerialNumber] [nvarchar](50) NULL,
+                            [GenreCode] [nvarchar](50) NULL,
+                            [Genre] [nvarchar](50) NULL);
+                            CREATE TABLE IF NOT EXISTS [VideoLabel](
+                            [SerialNumber] [nvarchar](50) NULL,
+                            [LabelCode] [nvarchar](50) NULL,
+                            [Label] [nvarchar](50) NULL);
+                            CREATE TABLE IF NOT EXISTS [VideoSeries](
+                            [SerialNumber] [nvarchar](50) NULL,
+                            [SeriesCode] [nvarchar](50) NULL,
+                            [Series] [nvarchar](50) NULL);
+                            CREATE TABLE IF NOT EXISTS [VideoSnapshot](
+                            [SerialNumber] [nvarchar](50) NULL,
+                            [URL] [nvarchar](500) NULL,
+                            [PicName] [nvarchar](500) NULL);
+                            CREATE TABLE IF NOT EXISTS [VideoStudio](
+                            [SerialNumber] [nvarchar](50) NULL,
+                            [StudioCode] [nvarchar](50) NULL,
+                            [Studio] [nvarchar](50) NULL);";
+
+            SQLiteCommand cmdCreateTable = new SQLiteCommand(sql, conn);
+            cmdCreateTable.ExecuteNonQuery();
+            conn.Close();
+        }
+
+        private static void ExectueInsertQuery(string connectStringSQLite, string query)
+        {
+            SQLiteConnection conn = null;
+            conn = new SQLiteConnection(connectStringSQLite);
+            conn.Open();
+            string sql = query;
+
+            SQLiteCommand cmdCreateTable = new SQLiteCommand(sql, conn);
+            cmdCreateTable.ExecuteNonQuery();
+            conn.Close();
         }
     }
 }

@@ -3,3 +3,14 @@ c:\users\joey\documents\visual studio 2015\Projects\AVDB Detail Info\AVDB Detail
 c:\users\joey\documents\visual studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\AVDB Detail Info.pdb
 c:\users\joey\documents\visual studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\obj\Debug\AVDB Detail Info.exe
 c:\users\joey\documents\visual studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\obj\Debug\AVDB Detail Info.pdb
+C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\EntityFramework.dll
+C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\EntityFramework.SqlServer.dll
+C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\System.Data.SQLite.dll
+C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\System.Data.SQLite.EF6.dll
+C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\System.Data.SQLite.Linq.dll
+C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\EntityFramework.xml
+C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\EntityFramework.SqlServer.xml
+C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\System.Data.SQLite.xml
+C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\HtmlAgilityPack.dll
+C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\HtmlAgilityPack.pdb
+C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\HtmlAgilityPack.xml
