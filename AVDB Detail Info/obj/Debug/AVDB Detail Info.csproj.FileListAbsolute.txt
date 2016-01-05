@@ -1,3 +1,16 @@
 c:\users\joey\documents\visual studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\AVDB Detail Info.exe
 C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\System.Data.SQLite.dll
 C:\Users\Joey\Documents\Visual Studio 2015\Projects\AVDB Detail Info\AVDB Detail Info\bin\Debug\HtmlAgilityPack.dll
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\bin\Debug\AVDB Detail Info.exe.config
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\bin\Debug\AVDB Detail Info.exe
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\bin\Debug\AVDB Detail Info.pdb
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\bin\Debug\HtmlAgilityPack.dll
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\bin\Debug\System.Data.SQLite.dll
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\bin\Debug\System.Data.SQLite.EF6.dll
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\bin\Debug\System.Data.SQLite.Linq.dll
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\bin\Debug\HtmlAgilityPack.pdb
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\bin\Debug\HtmlAgilityPack.xml
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\bin\Debug\System.Data.SQLite.xml
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\obj\Debug\AVDB Detail Info.csprojResolveAssemblyReference.cache
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\obj\Debug\AVDB Detail Info.exe
+C:\Users\JoeyShen\Documents\GitHub\AVDB_Detail_Info\AVDB Detail Info\obj\Debug\AVDB Detail Info.pdb
